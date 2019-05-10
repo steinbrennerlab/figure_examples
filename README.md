@@ -1,5 +1,5 @@
 # alluvial_diagrams
-Visualizing flow of genes through different conditions using ggplot and ggalluvial
+Visualizing flow of gene categorizations from DESeq output through different conditions using ggplot and ggalluvial
 
 See alluvial.html for rendered markdown and outputs
 
