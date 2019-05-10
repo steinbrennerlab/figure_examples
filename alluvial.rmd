@@ -92,8 +92,8 @@ deseq_input
 ```{r}
 
 #specify comparisons to load.
-comp1 <- "H1U1"
-comp2 <- "H6U1"
+comp1 <- "H6U1"
+comp2 <- "I6U1"
 
 #Specify number of comparisons "numcomp"
 numcomp <- 2

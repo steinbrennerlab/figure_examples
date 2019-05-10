@@ -5,5 +5,5 @@ See alluvial.html for rendered markdown and outputs
 
 See alluvial.Rmd for script components
 
-![two_comps](img/index01.png)
-![three_comps](img/index.png)
+![two_comps](img/index01.jpg)
+![three_comps](img/index.jpg)
