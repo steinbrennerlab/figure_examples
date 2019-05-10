@@ -74,7 +74,7 @@ deseq_input
 
 #specify comparisons to load.  Current code allows 3
 comp1 <- "H1U1"
-comp2 <- "I1U1"
+comp2 <- "H6U1"
 
 #Specify number of comparisons "numcomp"
 numcomp <- 2
@@ -82,9 +82,9 @@ numcomp <- 2
 #Specify other parameters
 pval <- 0.05
 higher <- 2
-high <- 1
+high <- 0.1
 lower <- -2
-low <- -1
+low <- -0.1
 otherwise <- "less than 1"
 set <- deseq_input %>% 
   mutate(sig = ifelse(padj < pval,1,0)) %>%
