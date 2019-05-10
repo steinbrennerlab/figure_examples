@@ -96,7 +96,7 @@ deseq_input <- read_csv("DEseq_alluvial_example.csv")
 deseq_input
 ```
 
-    ## # A tibble: 238,184 x 10
+    ## # A tibble: 20,424 x 10
     ##       X1 baseMean log2FoldChange  lfcSE    stat   pvalue    padj comp 
     ##    <dbl>    <dbl>          <dbl>  <dbl>   <dbl>    <dbl>   <dbl> <chr>
     ##  1     1     5.11        -0.404   0.835  -0.484  0.628    0.853  I1H1 
@@ -109,7 +109,7 @@ deseq_input
     ##  8     8     8.09        -0.723   0.822  -0.880  0.379    0.700  I1H1 
     ##  9     9     1.93        -1.23    1.12   -1.11   0.268   NA      I1H1 
     ## 10    10     3.24        -1.68    1.05   -1.60   0.109   NA      I1H1 
-    ## # ... with 238,174 more rows, and 2 more variables: gene <chr>, id <dbl>
+    ## # ... with 20,414 more rows, and 2 more variables: gene <chr>, id <dbl>
 
 ------------------------------------------------------------------------
 
@@ -225,8 +225,10 @@ figure <- ggplot(set,
   guides(fill=guide_legend(title="log2 Fold Change limits")) +
   scale_x_discrete(limits = c(comp1,comp2,comp3)) +
   ylab(paste(nrow(filter(set,comp==comp1)),"differentially expressed genes"))
-#figure
+figure
 ```
+
+![](alluvial_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
 ------------------------------------------------------------------------
 
@@ -250,8 +252,8 @@ list <- filter(set,
 list
 ```
 
-    ## # A tibble: 235 x 12
-    ## # Groups:   gene [235]
+    ## # A tibble: 19 x 12
+    ## # Groups:   gene [19]
     ##        X1 baseMean log2FoldChange lfcSE  stat   pvalue     padj comp  gene 
     ##     <dbl>    <dbl>          <dbl> <dbl> <dbl>    <dbl>    <dbl> <chr> <chr>
     ##  1 119167     7.66           2.48 0.729  3.40 6.62e- 4 5.27e- 3 H1U1  Vigu~
@@ -264,8 +266,16 @@ list
     ##  8 120375   341.             2.07 0.187 11.1  1.35e-28 1.11e-26 H1U1  Vigu~
     ##  9 120792    43.4            1.35 0.271  4.97 6.69e- 7 1.10e- 5 H1U1  Vigu~
     ## 10 120860    28.5            4.28 0.535  8.00 1.25e-15 5.03e-14 H1U1  Vigu~
-    ## # ... with 225 more rows, and 3 more variables: id <dbl>, sig <dbl>,
-    ## #   class <chr>
+    ## 11 120931     4.03           2.47 0.928  2.66 7.90e- 3 4.06e- 2 H1U1  Vigu~
+    ## 12 121011    18.7            2.27 0.565  4.01 5.96e- 5 6.47e- 4 H1U1  Vigu~
+    ## 13 121121     7.33           2.65 0.856  3.10 1.96e- 3 1.31e- 2 H1U1  Vigu~
+    ## 14 121199    22.9            1.74 0.459  3.78 1.54e- 4 1.49e- 3 H1U1  Vigu~
+    ## 15 121348   170.             3.90 0.330 11.8  3.36e-32 3.31e-30 H1U1  Vigu~
+    ## 16 121377     8.19           5.45 1.20   4.56 5.09e- 6 7.11e- 5 H1U1  Vigu~
+    ## 17 121432    93.5            6.93 0.737  9.39 5.81e-21 3.28e-19 H1U1  Vigu~
+    ## 18 121433    56.5            5.28 0.544  9.72 2.52e-22 1.51e-20 H1U1  Vigu~
+    ## 19 121482     8.95           2.12 0.712  2.97 2.96e- 3 1.84e- 2 H1U1  Vigu~
+    ## # ... with 3 more variables: id <dbl>, sig <dbl>, class <chr>
 
 ``` r
 #write_csv(list,"1_0_1.csv")
