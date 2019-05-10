@@ -1,9 +1,9 @@
 # alluvial_diagrams
 Visualizing flow of genes through different conditions using ggplot and ggalluvial
 
-See alluvial.html for readme
+See alluvial.html for rendered markdown and outputs
 
-To run, open alluvial.Rmd in RStudio
+See alluvial.Rmd for script components
 
 ![two_comps](img/index01.png)
 ![three_comps](img/index.png)
