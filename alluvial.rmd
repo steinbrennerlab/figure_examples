@@ -1,6 +1,6 @@
 ---
 title: "Alluvial Diagrams"
-output: html_document
+output: rmarkdown::github_document
 ---
 #### Adam Steinbrenner
 #### astein10@uw.edu
@@ -191,7 +191,7 @@ figure <- ggplot(set,
   guides(fill=guide_legend(title="log2 Fold Change limits")) +
   scale_x_discrete(limits = c(comp1,comp2,comp3)) +
   ylab(paste(nrow(filter(set,comp==comp1)),"differentially expressed genes"))
-figure
+#figure
 ```
 
 ----
