@@ -10,17 +10,36 @@ output: html_document
 
 ----
 
-###Install packages if needed, set working directory 
+###Install packages if needed
 ```
 install.packages("ggalluvial")
 install.packages("ggplot2")
 install.packages("alluvial")
+install.packages("readr")
+install.packages("dpylr")
 ```
 
 ----
 
-###The scripts below take in DESeq output comparisons (merged with bind_rows) with an additional column saying which comparison.  A simple pipeline to do this is below
+###The scripts below take in DESeq output comparisons (merged with bind_rows) with an additional column saying which comparison.  A simple pipeline to do this is below.  See DESeq documentation for details
 ```
+countdata <- read.table("combined_counts_input.csv", header=TRUE,sep=",",row.names = 1)
+
+countdata <- as.matrix(countdata)
+head(countdata)
+colnames(countdata)
+
+
+(condition <- factor(c(
+ rep("H1",4),
+ rep("H6",4),
+ rep("I1",4),
+ rep("I6",4),
+ rep("U1",4)
+ )
+ )
+ )
+
 (coldata <- data.frame(row.names=colnames(countdata), condition))
 dds <- DESeqDataSetFromMatrix(countData=countdata, colData=coldata, design=~condition)
 dds <- DESeq(dds)
@@ -72,7 +91,7 @@ deseq_input
 #### Example: 1 hour changes in damage+water vs undamaged ("H1U1") and damage+inceptin vs undamaged ("I1U1") 
 ```{r}
 
-#specify comparisons to load.  Current code allows 3
+#specify comparisons to load.
 comp1 <- "H1U1"
 comp2 <- "H6U1"
 
@@ -82,9 +101,9 @@ numcomp <- 2
 #Specify other parameters
 pval <- 0.05
 higher <- 2
-high <- 0.1
+high <- 1
 lower <- -2
-low <- -0.1
+low <- -1
 otherwise <- "less than 1"
 set <- deseq_input %>% 
   mutate(sig = ifelse(padj < pval,1,0)) %>%
@@ -111,7 +130,7 @@ figure <- ggplot(set,
   scale_fill_manual(
   #5 colors for the 5 classes; change if you want a different number
   values = c("blue1", "blue4", "red1", "red4", "grey")) +
-  guides(fill=guide_legend(title="log2 Fold Change")) +
+  guides(fill=guide_legend(title="log2 Fold Change limits")) +
   #Corrects the order of x categories
   scale_x_discrete(limits = c(comp1,comp2)) +
   #counts and prints as the ylabel the number of remaining datapoints within a single comparison axis
@@ -124,21 +143,19 @@ figure
 ----
 
 ### Visualize genes across THREE conditions
-#### Example: Flow 1 shows gene behavior over a timecourse (damage vs. undamaged at 1hr and 6hr), and flow 2 shows how the same genes behave after inceptin treatment
-#### Three conditions is more complicated to visualize; by default the two spacer sections between axes have no relation to one another (so a given gene's position does not "flow" from condition 1->2->3).  Instead we have to specify ggflow(stat="alluvium").  This takes longer to render and looks more complicated, but correctly shows gene flows across the entire diagram
-#### Because more flows complicates the diagrams, it's best to only have 3 classes.  Below, instead of 2 tiers of higher/lower there is only 1 tier
+#### Example: Flow 1 shows gene behavior over a timecourse (damage vs. undamaged at 1hr and 6hr), and flow 2 shows how the same genes behave after peptide treatment
+#### Three conditions is more complicated to visualize. By default the two spacer sections between axes have no relation to one another (so a given gene's position does not actually "flow" from condition 1->2->3).  Instead we have to specify ggflow(stat="alluvium").  This takes longer to render and looks more complicated, but correctly shows gene flows across the entire horizontal diagram.
+#### Because more flows complicates the diagrams, it's best to only have 3 classes (categories).  Below, instead of 2 tiers of higher/lower there is only 1 tier.
 #### See https://corybrunson.github.io/ggalluvial/reference/stat_alluvium.html  for details
 ```{r}
-
+#See example with 2 comparisons above for more thorough comments
 #specify comparisons to load.  Current code allows 3
 comp1 <- "H1U1"
 comp2 <- "H6U1"
 comp3 <- "I6U1"
 
-#Specify number of comparisons "numcomp"
 numcomp <- 3
 
-#Specify other parameters
 pval <- 0.05
 higher <- 1
 high <- 1
@@ -149,7 +166,6 @@ set <- deseq_input %>%
   mutate(sig = ifelse(padj < pval,1,0)) %>%
   #Changed to include any row from the 3 specified comparisons
   filter(comp==comp1 | comp==comp2 | comp==comp3) %>%
-  #Mutates a new column "class" that classifies genes that meet significance threshold and log2FoldChange between the high/low variables specified above
   mutate(class = ifelse(is.na(sig),otherwise,
                     ifelse(sig==1,
                       ifelse(log2FoldChange>higher,higher,
@@ -172,10 +188,10 @@ figure <- ggplot(set,
   scale_y_continuous(labels=NULL) + 
   scale_fill_manual(
   values = c("blue1", "red1", "grey")) +
-  guides(fill=guide_legend(title="log2 Fold Change")) +
+  guides(fill=guide_legend(title="log2 Fold Change limits")) +
   scale_x_discrete(limits = c(comp1,comp2,comp3)) +
   ylab(paste(nrow(filter(set,comp==comp1)),"differentially expressed genes"))
-figure  
+figure
 ```
 
 ----
@@ -190,7 +206,7 @@ dev.off()
 ----
 
 
-### dpyrl is also great for post-filter analysis; e.g. the following example produces a list of 235 genes that go from upregulated (in comparison 1) to no differential expression (comp 2) to upregulated (comp 3)
+### dpylr is also great for post-filter analysis; e.g. the following example produces a list of 235 genes that go from upregulated (in comparison 1) to no differential expression (less than 1, comp 2) to upregulated (comp 3)
 ```{r}
 list <- filter(set,
         #filters the gene set from an analysis above to keep only genes that meet one of three conditions
@@ -204,7 +220,7 @@ list
 
 ----
 
-# Old code is included in the R markdown file below but hidden in the final html file.  It might contain some useful snippets
+#### Old code is included in the R markdown file below but hidden in the html rendering.  It might contain some useful snippets
 ```{r echo = FALSE, eval = FALSE}
 #First alluvial: H1 vs I1 up and down, this pipeline was reformatted below
 
