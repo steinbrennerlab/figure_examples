@@ -5,5 +5,5 @@ See alluvial.html for readme
 
 To run, open alluvial.Rmd in RStudio
 
-![two_comps](img/index0.png)
+![two_comps](img/index01.png)
 ![three_comps](img/index.png)
