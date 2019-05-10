@@ -1,0 +1,273 @@
+---
+title: "Alluvial Diagrams"
+output: html_document
+---
+#### Adam Steinbrenner
+#### astein10@uw.edu
+#### http://steinbrennerlab.org
+#### Updated 5/10/2019
+#### The following R scripts use ggalluvial to visualize changes in sets of genes over different conditions (timepoints, treatments etc)
+
+----
+
+###Install packages if needed, set working directory 
+```
+install.packages("ggalluvial")
+install.packages("ggplot2")
+install.packages("alluvial")
+```
+
+----
+
+###The scripts below take in DESeq output comparisons (merged with bind_rows) with an additional column saying which comparison.  A simple pipeline to do this is below
+```
+(coldata <- data.frame(row.names=colnames(countdata), condition))
+dds <- DESeqDataSetFromMatrix(countData=countdata, colData=coldata, design=~condition)
+dds <- DESeq(dds)
+
+resI1H1 <- data.frame(results(dds, contrast=c("condition","I1","H1")))
+resI6H6 <- data.frame(results(dds, contrast=c("condition","I6","H6")))
+resI6I1 <- data.frame(results(dds, contrast=c("condition","I6","I1")))
+
+resI1H1$gene<-rownames(resI1H1)
+resI6H6$gene<-rownames(resI6H6)
+resI6I1$gene<-rownames(resI6I1)
+
+resI1H1$comp<-"I1H1"
+resI6H6$comp<-"I6H6"
+resI6I1$comp<-"I6I1"
+
+resI1H1 <- mutate(resI1H1,id=row_number())
+resI6H6 <- mutate(resI6H6,id=row_number())
+resI6I1 <- mutate(resI6I1,id=row_number())
+
+dfs <- list(resI1H1,resI6H6,resI6I1,resH6H1,resH1U1,resI1U1,resH6U1,resI6U1)
+all <- bind_rows(dfs,.id=NULL)
+rownames(all) <- all$gene
+write.csv(all,file="DESeq_allcomps_alluv.csv")
+```
+
+----
+
+###Load libraries and load sample file
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(ggalluvial)
+library(dplyr)
+library(readr)
+library(stringr)
+library(ggplot2)
+library(alluvial)
+library(scales)
+```
+
+```{r}
+deseq_input <- read_csv("DEseq_alluvial_example.csv")
+#Load and make sure it looks OK
+deseq_input
+```
+
+----
+
+### Visualize genes across two conditions
+#### Example: 1 hour changes in damage+water vs undamaged ("H1U1") and damage+inceptin vs undamaged ("I1U1") 
+```{r}
+
+#specify comparisons to load.  Current code allows 3
+comp1 <- "H1U1"
+comp2 <- "I1U1"
+
+#Specify number of comparisons "numcomp"
+numcomp <- 2
+
+#Specify other parameters
+pval <- 0.05
+higher <- 2
+high <- 1
+lower <- -2
+low <- -1
+otherwise <- "less than 1"
+set <- deseq_input %>% 
+  mutate(sig = ifelse(padj < pval,1,0)) %>%
+  filter(comp==comp1 | comp==comp2) %>%
+  mutate(class = ifelse(is.na(sig),otherwise,
+                    ifelse(sig==1,
+                      ifelse(log2FoldChange>higher,higher,
+                      ifelse(log2FoldChange>high,high,
+                      ifelse(log2FoldChange<lower,lower,
+                      ifelse(log2FoldChange<low,low,otherwise)))),otherwise))) %>% 
+  #this group and filter step is key: It filters the large set of genes not differentially expressed in both conditions.  It does so by keeping only genes that are not of class "otherwise" OR area any value that isn't repeated 2 times.
+  group_by(gene,class) %>% 
+  filter(class!=otherwise | n()<numcomp)
+
+require(scales)
+figure <- ggplot(set,
+  aes(x=comp, stratum = class, alluvium = id, y = id,label=class,fill=class)) + 
+  geom_flow() + 
+  geom_stratum(alpha = .5) +
+  geom_text(stat = "stratum", size = 3) +
+  theme(legend.position = "none") +
+  theme_classic() +
+  scale_y_continuous(labels=NULL) + 
+  scale_fill_manual(
+  #5 colors for the 5 classes; change if you want a different number
+  values = c("blue1", "blue4", "red1", "red4", "grey")) +
+  guides(fill=guide_legend(title="log2 Fold Change")) +
+  #Corrects the order of x categories
+  scale_x_discrete(limits = c(comp1,comp2)) +
+  #counts and prints as the ylabel the number of remaining datapoints within a single comparison axis
+  ylab(paste(nrow(filter(set,comp==comp1)),"differentially expressed genes"))
+
+#Visualize the alluvial diagram
+figure
+```
+
+----
+
+### Visualize genes across THREE conditions
+#### Example: Flow 1 shows gene behavior over a timecourse (damage vs. undamaged at 1hr and 6hr), and flow 2 shows how the same genes behave after inceptin treatment
+#### Three conditions is more complicated to visualize; by default the two spacer sections between axes have no relation to one another (so a given gene's position does not "flow" from condition 1->2->3).  Instead we have to specify ggflow(stat="alluvium").  This takes longer to render and looks more complicated, but correctly shows gene flows across the entire diagram
+#### Because more flows complicates the diagrams, it's best to only have 3 classes.  Below, instead of 2 tiers of higher/lower there is only 1 tier
+#### See https://corybrunson.github.io/ggalluvial/reference/stat_alluvium.html  for details
+```{r}
+
+#specify comparisons to load.  Current code allows 3
+comp1 <- "H1U1"
+comp2 <- "H6U1"
+comp3 <- "I6U1"
+
+#Specify number of comparisons "numcomp"
+numcomp <- 3
+
+#Specify other parameters
+pval <- 0.05
+higher <- 1
+high <- 1
+lower <- -1
+low <- -1
+otherwise <- "less than 1"
+set <- deseq_input %>% 
+  mutate(sig = ifelse(padj < pval,1,0)) %>%
+  #Changed to include any row from the 3 specified comparisons
+  filter(comp==comp1 | comp==comp2 | comp==comp3) %>%
+  #Mutates a new column "class" that classifies genes that meet significance threshold and log2FoldChange between the high/low variables specified above
+  mutate(class = ifelse(is.na(sig),otherwise,
+                    ifelse(sig==1,
+                      ifelse(log2FoldChange>higher,higher,
+                      ifelse(log2FoldChange>high,high,
+                      ifelse(log2FoldChange<lower,lower,
+                      ifelse(log2FoldChange<low,low,otherwise)))),otherwise))) %>% 
+  group_by(gene,class) %>% 
+  #Filter now filters out genes with 3 instances, not 2
+  filter(class!=otherwise | n()<numcomp)
+
+require(scales)
+figure <- ggplot(set,
+  aes(x=comp, stratum = class, alluvium = id, y = id,label=class,fill=class)) + 
+  ###To do: visualize a flow of interest using aes(alpha=high if we're interested).  (Use a mutate to generate a new var)
+  geom_flow(stat="alluvium",lode.guidance = "leftward") +
+  geom_stratum(alpha = .5) +
+  geom_text(stat = "stratum", size = 3) +
+  theme(legend.position = "none") +
+  theme_classic() +
+  scale_y_continuous(labels=NULL) + 
+  scale_fill_manual(
+  values = c("blue1", "red1", "grey")) +
+  guides(fill=guide_legend(title="log2 Fold Change")) +
+  scale_x_discrete(limits = c(comp1,comp2,comp3)) +
+  ylab(paste(nrow(filter(set,comp==comp1)),"differentially expressed genes"))
+figure  
+```
+
+----
+
+### Print to pdf after generating the ggplot
+```
+pdf("output.pdf")
+figure
+dev.off()
+```
+
+----
+
+
+### dpyrl is also great for post-filter analysis; e.g. the following example produces a list of 235 genes that go from upregulated (in comparison 1) to no differential expression (comp 2) to upregulated (comp 3)
+```{r}
+list <- filter(set,
+        #filters the gene set from an analysis above to keep only genes that meet one of three conditions
+        (comp==comp1 & class==1) | (comp==comp2 & class==otherwise) | (comp==comp3 & class==1)) %>% 
+        group_by(gene) %>% 
+        #Only keep genes that occur 3 times (i.e. meet all three conditions) and specify the data you want to keep
+        filter(n()==3 & comp==comp1)
+list
+#write_csv(list,"1_0_1.csv")
+```
+
+----
+
+# Old code is included in the R markdown file below but hidden in the final html file.  It might contain some useful snippets
+```{r echo = FALSE, eval = FALSE}
+#First alluvial: H1 vs I1 up and down, this pipeline was reformatted below
+
+deseq <- read_delim("DESeq_allcomps_condense_alluv1.txt", 
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+names(deseq)<-str_replace_all(names(deseq), c(" " = "." , "," = "" ))
+
+deseq2 <- deseq %>%
+  select(I1U1.log2FoldChange,H1U1.log2FoldChange,gene,I1U1.sig,H1U1.sig)
+
+
+#summary count stat for number of instances where gene and class are the same
+deseq %>% group_by(class,gene) %>% summarize(n=n())
+#filter the tibble for only cases where either there is a difference (so class is not none, OR there's one instance, allowing for genes where no DE in only one condition)
+deseq2 <- deseq %>% group_by(gene,class) %>% filter(class!="none" | n()==1)
+  
+ggplot(deseq2,
+      aes(x=comp, stratum = class, alluvium = gene, y = number,label=class,fill=class)) + 
+  scale_x_discrete(expand = c(.1, .1)) +
+  geom_flow() +
+  geom_stratum(alpha = .5) +
+  geom_text(stat = "stratum", size = 3) +
+  theme(legend.position = "none")
+  
+#Second alluvial: load a file where condition is in column "comp"
+deseq <- read_csv("DESeq_allcomps_alluv.csv")
+##specify comparisons to load
+comp1 <- "H6U1"
+comp2 <- "H1U1"
+pval <- 0.05
+high1 <- 3
+high2 <- 1
+low1 <- -3
+low2 <- -1
+otherwise <- "less than 1"
+deseq2 <- deseq %>% 
+  mutate(sig = ifelse(padj < pval,1,0)) %>%
+  filter(comp==comp1 | comp==comp2) %>%
+  mutate(class = ifelse(is.na(sig),otherwise,
+                    ifelse(sig==1,
+                      ifelse(log2FoldChange>high1,high1,
+                      ifelse(log2FoldChange>high2,high2,
+                      ifelse(log2FoldChange<low1,low1,
+                      ifelse(log2FoldChange<low2,low2,otherwise)))),otherwise))) %>% group_by(gene,class) %>% filter(class!=otherwise | n()==1)
+
+require(scales)
+p<- ggplot(deseq2,
+      aes(x=comp, stratum = class, alluvium = gene, y = id,label=class,fill=class)) + 
+  geom_flow() +
+  geom_stratum(alpha = .5) +
+  geom_text(stat = "stratum", size = 3) +
+  theme(legend.position = "none") +
+  theme_classic() +
+  scale_y_continuous(labels=comma) + 
+  scale_fill_manual(
+    values = c("blue1", "blue4", "red1", "red4", "grey")) +
+  guides(fill=guide_legend(title="log2 Fold Change"))
+p  
+##manual scale
+y_upper <- 1.1e8
+y_lower <- 0
+p <- p + scale_y_continuous(labels=comma,limits=c(y_lower,y_upper))
+p  
+```
+
+
