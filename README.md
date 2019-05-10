@@ -5,4 +5,5 @@ See alluvial.html for readme
 
 To run, open alluvial.Rmd in RStudio
 
-![three_comps](steinbrennerlab.github.com/alluvial_diagrams/index.png)
+![two_comps](img/index0.png)
+![three_comps](img/index.png)
