@@ -1,16 +1,21 @@
 ---
 title: "Alluvial Diagrams"
-output: rmarkdown::github_document
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
 ---
-#### Adam Steinbrenner
-#### astein10@uw.edu
-#### http://steinbrennerlab.org
-#### Updated 5/10/2019
-#### The following R scripts use ggalluvial to visualize changes in sets of genes over different conditions (timepoints, treatments etc)
+##About the scripts
+Adam Steinbrenner  
+astein10@uw.edu  
+http://steinbrennerlab.org  
+Updated 5/10/2019  
+
+The following R scripts use ggalluvial to visualize changes in sets of genes over different conditions (timepoints, treatments etc)
 
 ----
 
-###Install packages if needed
+##Install packages if needed
 ```
 install.packages("ggalluvial")
 install.packages("ggplot2")
@@ -21,7 +26,8 @@ install.packages("dpylr")
 
 ----
 
-###The scripts below take in DESeq output comparisons (merged with bind_rows) with an additional column saying which comparison.  A simple pipeline to do this is below.  See DESeq documentation for details
+##Generate DESeq output
+The scripts take in DESeq output comparisons (merged with bind_rows) with an additional column specifying which comparison the stats came from.  A simple pipeline to do this is below with conditions "H1, H6..."  See DESeq documentation for details
 ```
 countdata <- read.table("combined_counts_input.csv", header=TRUE,sep=",",row.names = 1)
 
@@ -68,7 +74,7 @@ write.csv(all,file="DESeq_allcomps_alluv.csv")
 
 ----
 
-###Load libraries and load sample file
+##Load libraries and load sample file
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(ggalluvial)
 library(dplyr)
@@ -87,8 +93,8 @@ deseq_input
 
 ----
 
-### Visualize genes across two conditions
-#### Example: 1 hour changes in damage+water vs undamaged ("H1U1") and damage+inceptin vs undamaged ("I1U1") 
+## Visualize genes across two conditions
+Example: 1 hour changes in damage+water vs undamaged ("H1U1") and damage+peptide vs undamaged ("I1U1") 
 ```{r}
 
 #specify comparisons to load.
@@ -108,6 +114,7 @@ otherwise <- "less than 1"
 set <- deseq_input %>% 
   mutate(sig = ifelse(padj < pval,1,0)) %>%
   filter(comp==comp1 | comp==comp2) %>%
+  #creates variable "class" based on threshold criteria, e.g. foldChange > or < variables higher/lower
   mutate(class = ifelse(is.na(sig),otherwise,
                     ifelse(sig==1,
                       ifelse(log2FoldChange>higher,higher,
@@ -116,7 +123,9 @@ set <- deseq_input %>%
                       ifelse(log2FoldChange<low,low,otherwise)))),otherwise))) %>% 
   #this group and filter step is key: It filters the large set of genes not differentially expressed in both conditions.  It does so by keeping only genes that are not of class "otherwise" OR area any value that isn't repeated 2 times.
   group_by(gene,class) %>% 
-  filter(class!=otherwise | n()<numcomp)
+  filter(class!=otherwise | n()<numcomp) %>%
+  #adds a column specifying transparency variable
+  mutate(transp = ifelse(class==higher,1,0.00))
 
 require(scales)
 figure <- ggplot(set,
@@ -142,11 +151,26 @@ figure
 
 ----
 
-### Visualize genes across THREE conditions
-#### Example: Flow 1 shows gene behavior over a timecourse (damage vs. undamaged at 1hr and 6hr), and flow 2 shows how the same genes behave after peptide treatment
-#### Three conditions is more complicated to visualize. By default the two spacer sections between axes have no relation to one another (so a given gene's position does not actually "flow" from condition 1->2->3).  Instead we have to specify ggflow(stat="alluvium").  This takes longer to render and looks more complicated, but correctly shows gene flows across the entire horizontal diagram.
-#### Because more flows complicates the diagrams, it's best to only have 3 classes (categories).  Below, instead of 2 tiers of higher/lower there is only 1 tier.
-#### See https://corybrunson.github.io/ggalluvial/reference/stat_alluvium.html  for details
+## Highlight a specific flow 
+Use alpha in the geom_flow, referencing the earlier mutated variable "transp"
+```{r}
+figure2 <- figure + 
+  geom_flow(aes(fill = class, alpha = transp))
+
+figure2
+```
+
+----
+
+## Visualize genes across three conditions
+
+Three conditions is more complicated to visualize. By default the two spacer sections between axes have no relation to one another (so a given gene's position does not actually "flow" from condition 1->2->3).  Instead we have to specify ggflow(stat="alluvium").  This takes longer to render and looks more complicated, but correctly shows gene flows across the entire horizontal diagram.
+
+Because more flows complicates the diagrams, it's best to only have 3 classes (categories), e.g. only one tier "upregulated" versus multiple thresholds.
+
+Example below: Flow 1 shows gene behavior over a timecourse (damage vs. undamaged at 1hr and 6hr), and flow 2 shows how the same genes behave after peptide treatment
+
+See https://corybrunson.github.io/ggalluvial/reference/stat_alluvium.html  for details
 ```{r}
 #See example with 2 comparisons above for more thorough comments
 #specify comparisons to load.  Current code allows 3
@@ -182,7 +206,7 @@ figure <- ggplot(set,
   ###To do: visualize a flow of interest using aes(alpha=high if we're interested).  (Use a mutate to generate a new var)
   geom_flow(stat="alluvium",lode.guidance = "leftward") +
   geom_stratum(alpha = .5) +
-  geom_text(stat = "stratum", size = 3) +
+  geom_text(stat = "stratum", size = 2) +
   theme(legend.position = "none") +
   theme_classic() +
   scale_y_continuous(labels=NULL) + 
@@ -196,7 +220,7 @@ figure
 
 ----
 
-### Print to pdf after generating the ggplot
+## Print to pdf after generating the ggplot
 ```
 pdf("output.pdf")
 figure
@@ -206,7 +230,8 @@ dev.off()
 ----
 
 
-### dpylr is also great for post-filter analysis; e.g. the following example produces a list of 235 genes that go from upregulated (in comparison 1) to no differential expression (less than 1, comp 2) to upregulated (comp 3)
+## Further dpylr steps for post-filter analysis and gene list export
+dpylr is great for further filtering of the resulting classified gene lists.For example, the following example produces a list of 235 genes that go from upregulated (in comparison 1) to no differential expression (less than 1, comp 2) to upregulated (comp 3)
 ```{r}
 list <- filter(set,
         #filters the gene set from an analysis above to keep only genes that meet one of three conditions
@@ -214,13 +239,15 @@ list <- filter(set,
         group_by(gene) %>% 
         #Only keep genes that occur 3 times (i.e. meet all three conditions) and specify the data you want to keep
         filter(n()==3 & comp==comp1)
+#sort by fold change
+arrange(list,desc(log2FoldChange))
 list
 #write_csv(list,"1_0_1.csv")
 ```
 
 ----
 
-#### Old code is included in the R markdown file below but hidden in the html rendering.  It might contain some useful snippets
+Old code is included in the R markdown file below but hidden in the html rendering.  It might contain some useful snippets
 ```{r echo = FALSE, eval = FALSE}
 #First alluvial: H1 vs I1 up and down, this pipeline was reformatted below
 
