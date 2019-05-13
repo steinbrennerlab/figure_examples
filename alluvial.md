@@ -14,12 +14,7 @@ Alluvial Diagrams
 About the scripts
 -----------------
 
-Adam Steinbrenner
-<astein10@uw.edu>
-<http://steinbrennerlab.org>
-Updated 5/10/2019
-
-The following R scripts use ggalluvial to visualize changes in sets of genes over different conditions (timepoints, treatments etc)
+Adam Steinbrenner <br> <astein10@uw.edu> <br> <http://steinbrennerlab.org> <br> Updated 5/10/2019 <br> <br> The following R scripts use ggalluvial to visualize changes in sets of genes over different conditions (timepoints, treatments etc)
 
 ------------------------------------------------------------------------
 
@@ -87,7 +82,7 @@ Load libraries and load sample file
 -----------------------------------
 
 ``` r
-deseq_input <- read_csv("DEseq_alluvial_example.csv")
+deseq_input <- read_csv('C:/Users/Adam/Dropbox/github/alluvial_diagrams/alluvial_diagrams/data/DEseq_alluvial_example.csv')
 ```
 
     ## Warning: Missing column names filled in: 'X1' [1]
@@ -151,6 +146,7 @@ otherwise <- "less than 1"
 set <- deseq_input %>% 
   mutate(sig = ifelse(padj < pval,1,0)) %>%
   filter(comp==comp1 | comp==comp2) %>%
+  
   #creates variable "class" based on threshold criteria, e.g. foldChange > or < variables higher/lower
   mutate(class = ifelse(is.na(sig),otherwise,
                     ifelse(sig==1,
@@ -158,9 +154,11 @@ set <- deseq_input %>%
                       ifelse(log2FoldChange>high,high,
                       ifelse(log2FoldChange<lower,lower,
                       ifelse(log2FoldChange<low,low,otherwise)))),otherwise))) %>% 
-  #this group and filter step is key: It filters the large set of genes not differentially expressed in both conditions.  It does so by keeping only genes that are not of class "otherwise" OR area any value that isn't repeated 2 times.
+  
+  #this group and filter step is key: It filters out the large set of genes not differentially expressed in both conditions.  It does so by keeping only genes that are not of class "otherwise" OR area any value that isn't repeated 2 times.
   group_by(gene,class) %>% 
   filter(class!=otherwise | n()<numcomp) %>%
+  
   #adds a column specifying transparency variable
   mutate(transp = ifelse(class==higher,1,0.00))
 
@@ -174,11 +172,14 @@ figure <- ggplot(set,
   theme_classic() +
   scale_y_continuous(labels=NULL) + 
   scale_fill_manual(
+    
   #5 colors for the 5 classes; change if you want a different number
   values = c("blue1", "blue4", "red1", "red4", "grey")) +
   guides(fill=guide_legend(title="log2 Fold Change limits")) +
+  
   #Corrects the order of x categories
   scale_x_discrete(limits = c(comp1,comp2)) +
+  
   #counts and prints as the ylabel the number of remaining datapoints within a single comparison axis
   ylab(paste(nrow(filter(set,comp==comp1)),"differentially expressed genes"))
 
@@ -234,6 +235,7 @@ low <- -1
 otherwise <- "less than 1"
 set <- deseq_input %>% 
   mutate(sig = ifelse(padj < pval,1,0)) %>%
+  
   #Changed to include any row from the 3 specified comparisons
   filter(comp==comp1 | comp==comp2 | comp==comp3) %>%
   mutate(class = ifelse(is.na(sig),otherwise,
@@ -243,13 +245,13 @@ set <- deseq_input %>%
                       ifelse(log2FoldChange<lower,lower,
                       ifelse(log2FoldChange<low,low,otherwise)))),otherwise))) %>% 
   group_by(gene,class) %>% 
+  
   #Filter now filters out genes with 3 instances, not 2
   filter(class!=otherwise | n()<numcomp)
 
 require(scales)
 figure <- ggplot(set,
   aes(x=comp, stratum = class, alluvium = id, y = id,label=class,fill=class)) + 
-  ###To do: visualize a flow of interest using aes(alpha=high if we're interested).  (Use a mutate to generate a new var)
   geom_flow(stat="alluvium",lode.guidance = "leftward") +
   geom_stratum(alpha = .5) +
   geom_text(stat = "stratum", size = 2) +
@@ -284,11 +286,14 @@ dpylr is great for further filtering of the resulting classified gene lists.For 
 
 ``` r
 list <- filter(set,
+               
         #filters the gene set from an analysis above to keep only genes that meet one of three conditions
         (comp==comp1 & class==1) | (comp==comp2 & class==otherwise) | (comp==comp3 & class==1)) %>% 
         group_by(gene) %>% 
+  
         #Only keep genes that occur 3 times (i.e. meet all three conditions) and specify the data you want to keep
         filter(n()==3 & comp==comp1)
+
 #sort by fold change
 arrange(list,desc(log2FoldChange))
 ```

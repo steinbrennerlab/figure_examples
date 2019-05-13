@@ -6,11 +6,11 @@ output:
     toc_depth: 2
 ---
 ##About the scripts
-Adam Steinbrenner  
-astein10@uw.edu  
-http://steinbrennerlab.org  
-Updated 5/10/2019  
-
+Adam Steinbrenner <br>
+astein10@uw.edu <br>
+http://steinbrennerlab.org <br>
+Updated 5/10/2019 <br>
+<br>
 The following R scripts use ggalluvial to visualize changes in sets of genes over different conditions (timepoints, treatments etc)
 
 ----
@@ -86,7 +86,7 @@ library(scales)
 ```
 
 ```{r}
-deseq_input <- read_csv("DEseq_alluvial_example.csv")
+deseq_input <- read_csv('C:/Users/Adam/Dropbox/github/alluvial_diagrams/alluvial_diagrams/data/DEseq_alluvial_example.csv')
 #Load and make sure it looks OK
 deseq_input
 ```
