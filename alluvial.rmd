@@ -85,7 +85,7 @@ library(alluvial)
 library(scales)
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 deseq_input <- read_csv('C:/Users/Adam/Dropbox/github/alluvial_diagrams/alluvial_diagrams/data/DEseq_alluvial_example.csv')
 #Load and make sure it looks OK
 deseq_input

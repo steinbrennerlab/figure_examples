@@ -39,7 +39,7 @@ devtools::install_github("GuangchuangYu/treeio")
 ---
 
 ## Load libraries
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library("ggplot2")
 library("treeio")
 library("phytools") # for sims and ASRs

@@ -81,31 +81,6 @@ The scripts take in DESeq output comparisons (merged with bind\_rows) with an ad
 Load libraries and load sample file
 -----------------------------------
 
-``` r
-deseq_input <- read_csv('C:/Users/Adam/Dropbox/github/alluvial_diagrams/alluvial_diagrams/data/DEseq_alluvial_example.csv')
-```
-
-    ## Warning: Missing column names filled in: 'X1' [1]
-
-    ## Parsed with column specification:
-    ## cols(
-    ##   X1 = col_double(),
-    ##   baseMean = col_double(),
-    ##   log2FoldChange = col_double(),
-    ##   lfcSE = col_double(),
-    ##   stat = col_double(),
-    ##   pvalue = col_double(),
-    ##   padj = col_double(),
-    ##   comp = col_character(),
-    ##   gene = col_character(),
-    ##   id = col_double()
-    ## )
-
-``` r
-#Load and make sure it looks OK
-deseq_input
-```
-
     ## # A tibble: 20,424 x 10
     ##       X1 baseMean log2FoldChange  lfcSE    stat   pvalue    padj comp 
     ##    <dbl>    <dbl>          <dbl>  <dbl>   <dbl>    <dbl>   <dbl> <chr>
